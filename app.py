@@ -32,7 +32,7 @@ if not os.path.exists(_config_dir):
 
 def does_config_exist(config,omit_message=False):
 	if not os.path.exists(_config_dir+'/'+config+'.yml'):
-		if omit_message== False:
+		if omit_message==False:
 			print "No such configuration exists. you can use `clde config --action=list` to list all configs."
 		return False
 	else:
@@ -67,11 +67,18 @@ def delete_source():
 		os.remove(_config_dir+'/'+config+'.yml')
 		print "Configuration for %s deleted." %(config)	
 
-def show_config_info():
-	config = raw_input("Give the name of config you want to see information : ").lower()
+def get_config_info(config):
 	if does_config_exist(config)==True:
 		config_file = open(_config_dir+'/'+config+'.yml', "r")
 		values = yaml.load(config_file)
+		return values  	
+	else:
+		return False 
+
+def show_config_info():
+	config = raw_input("Give the name of config you want to see information : ").lower()
+	values = get_config_info(config)
+	if values is not False: 
 		print '-------------------------------------'
 		# Why not a loop or list comp here. yaml serialize alphabatical order when dumps.
 		# I don't want to write more code to overwrite that behaviour.  
@@ -82,7 +89,6 @@ def show_config_info():
 		print  "Port : " + values['port']
 		print  "Database : " + values['database']
 		print  "User : " + values['user']
-		print  "Pssword : " + values['password']
 		print '-------------------------------------'
 
 
@@ -92,6 +98,20 @@ def list_sources():
 		# man up and do regex
 		if each.split('.')[1] =='yml':
 			print each.split('.')[0]
+
+
+def extract(source,query,output):
+	if does_config_exist(source)==True:
+		values = get_config_info(source)
+		if values is not False:
+			if os.path.exists(args.query):
+				print "I'm a file"
+			elif args.query.split(' ')[0].lower()=="select":
+				print "I'm a query string"
+			else:
+				print "It looks like the query file you have given does not exist. Please chech your file name."
+	else:
+		return
 
 if args.__contains__('action'):
 	my_action = args.action
@@ -107,3 +127,8 @@ if args.__contains__('action'):
 
 	if my_action=='list':
 		list_sources()
+
+if args.__contains__('source') and args.__contains__('query') and args.__contains__('output_format'):
+	extract(args.source, args.query, args.output_format)
+
+
