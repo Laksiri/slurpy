@@ -4,6 +4,9 @@ import yaml
 import getpass
 import re
 
+from utils import Utils
+
+my_utils = Utils()
 # main parser
 parser = argparse.ArgumentParser()
 
@@ -24,32 +27,19 @@ parser_extract.add_argument('--output_format', required=True, choices=['csv','js
 
 args = parser.parse_args()
 
-_base_dir = os.path.dirname(os.path.abspath(__file__))
-_config_dir = _base_dir + "/config"
-if not os.path.exists(_config_dir):
-	os.makedirs(_config_dir)
-
-
-def does_config_exist(config,omit_message=False):
-	if not os.path.exists(_config_dir+'/'+config+'.yml'):
-		if omit_message==False:
-			print "No such configuration exists. you can use `clde config --action=list` to list all configs."
-		return False
-	else:
-		return True
 
 def new_or_edit_source(action):
 	source= {}
 	if action=='new':
 		print "New config"
 		source['conf_name'] = raw_input("Give a name for the new config : ")
-		if does_config_exist(source['conf_name'],True)== True:
+		if my_utils.does_config_exist(source['conf_name'],True)== True:
 			print "This configuration exists. Use `clde config --action=edit` if you want to make changes."
 			return			
 	if action=='edit':
 		print "Edit config"
 		source['conf_name'] = raw_input("Give the name of the config you want to edit : ")
-		if does_config_exist(source['conf_name'])==False:
+		if my_utils.does_config_exist(source['conf_name'])==False:
 			return
 
 	source['server_type'] = raw_input("Server type (pg/msql) : ").lower()
@@ -59,17 +49,17 @@ def new_or_edit_source(action):
 	source['user'] = raw_input("User name : ")
 	source['password'] = getpass.getpass("Password (you will not see this): ")
 
-	yaml.dump(source,file(_config_dir+'/'+source['conf_name'].lower()+'.yml', 'w'))	
+	yaml.dump(source,file(my_utils.config_dir+'/'+source['conf_name'].lower()+'.yml', 'w'))	
 
 def delete_source():
 	config = raw_input("Give the name of config you want to delete: ").lower()
-	if does_config_exist(config)==True:
-		os.remove(_config_dir+'/'+config+'.yml')
+	if my_utils.does_config_exist(config)==True:
+		os.remove(my_utils.config_dir+'/'+config+'.yml')
 		print "Configuration for %s deleted." %(config)	
 
 def get_config_info(config):
-	if does_config_exist(config)==True:
-		config_file = open(_config_dir+'/'+config+'.yml', "r")
+	if my_utils.does_config_exist(config)==True:
+		config_file = open(my_utils.config_dir+'/'+config+'.yml', "r")
 		values = yaml.load(config_file)
 		return values  	
 	else:
@@ -93,15 +83,15 @@ def show_config_info():
 
 
 def list_sources():
-	configs = os.listdir(_config_dir)
+	configs = os.listdir(my_utils.config_dir)
 	for each in configs:
-		# man up and do regex
-		if each.split('.')[1] =='yml':
+		match = re.search(r'yml$',each)
+		if match is not None:
 			print each.split('.')[0]
 
 
 def extract(source,query,output):
-	if does_config_exist(source)==True:
+	if my_utils.does_config_exist(source)==True:
 		values = get_config_info(source)
 		if values is not False:
 			if os.path.exists(args.query):
