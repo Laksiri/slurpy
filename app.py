@@ -6,9 +6,11 @@ import re
 
 from utils import Utils
 from config import Config
+from extract import Extract
 
 my_utils = Utils()
 my_config = Config()
+my_extract = Extract()
 
 # main parser
 parser = argparse.ArgumentParser()
@@ -28,21 +30,6 @@ parser_extract.add_argument('--output_format', required=True, choices=['csv','js
 
 args = parser.parse_args()
 
-def extract(source,query,output):
-	if my_utils.does_config_exist(source)==True:
-		values = get_config_info(source)
-		if values is not False:
-			if os.path.exists(args.query):
-				print "I'm a file"
-			elif args.query.split(' ')[0].lower()=="select":
-				print "I'm a query string"
-			else:
-				print "It looks like the query file you have given does not exist. Please chech your file name."
-	else:
-		return
-
-
-
 if args.__contains__('action'):
 	my_action = args.action
 
@@ -59,6 +46,6 @@ if args.__contains__('action'):
 		my_config.list_sources()
 
 if args.__contains__('source') and args.__contains__('query') and args.__contains__('output_format'):
-	extract(args.source, args.query, args.output_format)
+	my_extract.extract(args.source, args.query, args.output_format)
 
 
