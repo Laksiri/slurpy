@@ -3,6 +3,8 @@ import argparse
 import yaml
 import getpass
 import re
+import hashlib
+import time
 
 import pandas as pd
 import psycopg2 as pg
@@ -16,6 +18,7 @@ my_config = Config()
 class Extract():
 
 	CONN = None 
+	RUN_FOLDER  = None
 
 	def __init__(self):
 		pass
@@ -24,12 +27,16 @@ class Extract():
 		if my_utils.does_config_exist(source)==True:
 			values = my_config.get_config_info(source)
 			if values is not False:
+				self.make_run_folder()
 				if os.path.exists(query):
 					sql_strings = self.read_sql_file(query)
+					i =0 
 					for each_query in sql_strings:
 						if self.is_sql_string_safe(each_query) ==True:
 							print 'I can process you'
-							self.conect_and_extract(source,each_query)
+							i += 1
+							self.write_clean_sql_file(self.RUN_FOLDER +'/clean_sql.sql',each_query,'/*------ QUERY ' + str(i) + ' ------ */')
+							self.conect_and_extract(source,each_query,self.RUN_FOLDER,i)
 						else:
 							print 'sorry, you are not safe'	
 				elif query.split(' ')[0].lower()=="select":
@@ -57,7 +64,7 @@ class Extract():
 		else:
 			return False	 
 
-	def conect_and_extract(self,source,query):
+	def conect_and_extract(self,source,query,output_dir,index):
 		my_source = my_config.get_config_info(source)
 		db_server_type= my_source['server_type']
 		db_host= my_source['host']
@@ -73,7 +80,29 @@ class Extract():
 			cur.execute(query)
 			df= pd.DataFrame(cur.fetchall())
 			print df
+			df.to_csv(output_dir+ '/results_query_'+ str(index)+'.csv',index=False,columns=list(df.columns.values))
 			self.CONN.close()
+
+
+	def make_run_folder(self):
+		hash = hashlib.sha1()
+		hash.update(str(time.time()))
+		run_id =  hash.hexdigest() 
+		## ugly. ouput should be in somewhere user can access quickly. Change this later.  
+		run_folder = os.path.dirname(__file__)+ '/run/' + run_id
+		try:
+			os.stat(run_folder)
+		except:
+			os.makedirs(run_folder)
+
+		self.RUN_FOLDER	= run_folder	
+
+	def write_clean_sql_file(self, file_path, sql_string, label):
+		with open(file_path,"a+") as f:
+			f.write(label+'\n')
+			f.write(sql_string+'\n')
+			f.write('/*-------------------*/\n\n')	
+		f.close()
 
 		# open connection
 		# run query and get results to a pandas data frame
