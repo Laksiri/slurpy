@@ -78,9 +78,11 @@ class Extract():
 			self.CONN = pg.connect(host=db_host,user=db_user,password=db_password,database=db_database)
 			cur =  self.CONN.cursor()
 			cur.execute(query)
+			my_header = [desc[0].strip() for desc in cur.description]
 			df= pd.DataFrame(cur.fetchall())
-			print df
-			df.to_csv(output_dir+ '/results_query_'+ str(index)+'.csv',index=False,columns=list(df.columns.values))
+			df.columns = my_header
+			
+			df.to_csv(self.RUN_FOLDER +'/output_'+ str(index)+'.csv',index=False)
 			self.CONN.close()
 
 

@@ -1,5 +1,5 @@
 -- here you go
-select * from public.pcore_lease limit 10;
+select balance,case_number from public.pcore_lease limit 10;
 
 /* comment
 goes here */
